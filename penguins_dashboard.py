@@ -8,6 +8,14 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 import os
+from datetime import datetime
+from io import BytesIO
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 # Page config
 st.set_page_config(
@@ -111,6 +119,234 @@ def load_data():
 
 df = load_data()
 
+# PDF Generation Function
+def generate_pdf_report(filtered_df, selected_attribute):
+    """Generate a comprehensive PDF report of the analysis"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#1a5f7a'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor('#1a5f7a'),
+        spaceAfter=12,
+        spaceBefore=12
+    )
+    
+    # Title
+    story.append(Paragraph("Palmer Penguins Analysis Report", title_style))
+    story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Executive Summary
+    story.append(Paragraph("Executive Summary", heading_style))
+    summary_data = [
+        ['Metric', 'Value'],
+        ['Total Specimens', str(len(filtered_df))],
+        ['Species Count', str(filtered_df['Species'].nunique())],
+        ['Islands Surveyed', str(filtered_df['Island'].nunique())],
+        ['Mean Body Mass', f"{filtered_df['Body Mass (G)'].mean():.1f} g"],
+        ['Max Body Mass', f"{filtered_df['Body Mass (G)'].max():.0f} g"],
+        ['Min Body Mass', f"{filtered_df['Body Mass (G)'].min():.0f} g"]
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f7a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Species Distribution
+    story.append(Paragraph("Species Distribution", heading_style))
+    species_counts = filtered_df['Species'].value_counts()
+    species_data = [['Species', 'Count', 'Percentage']]
+    for species, count in species_counts.items():
+        pct = (count / len(filtered_df) * 100)
+        species_data.append([species, str(count), f"{pct:.1f}%"])
+    
+    species_table = Table(species_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+    species_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#b47eba')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+    story.append(species_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Island Distribution
+    story.append(Paragraph("Island Distribution", heading_style))
+    island_counts = filtered_df['Island'].value_counts()
+    island_data = [['Island', 'Count', 'Percentage']]
+    for island, count in island_counts.items():
+        pct = (count / len(filtered_df) * 100)
+        island_data.append([island, str(count), f"{pct:.1f}%"])
+    
+    island_table = Table(island_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+    island_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c8902e')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+    story.append(island_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Statistical Summary for Selected Attribute
+    story.append(Paragraph(f"Statistical Analysis: {selected_attribute}", heading_style))
+    stats_data = [
+        ['Statistic', 'Value'],
+        ['Mean', f"{filtered_df[selected_attribute].mean():.2f}"],
+        ['Median', f"{filtered_df[selected_attribute].median():.2f}"],
+        ['Std Dev', f"{filtered_df[selected_attribute].std():.2f}"],
+        ['Min', f"{filtered_df[selected_attribute].min():.2f}"],
+        ['Max', f"{filtered_df[selected_attribute].max():.2f}"],
+        ['25th Percentile', f"{filtered_df[selected_attribute].quantile(0.25):.2f}"],
+        ['75th Percentile', f"{filtered_df[selected_attribute].quantile(0.75):.2f}"]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3d9b9b')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+    ]))
+    story.append(stats_table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Page Break before detailed data
+    story.append(PageBreak())
+    
+    # Species-by-Species Breakdown
+    story.append(Paragraph("Detailed Species Analysis", heading_style))
+    for species in filtered_df['Species'].unique():
+        species_df = filtered_df[filtered_df['Species'] == species]
+        story.append(Paragraph(f"{species} Penguins (n={len(species_df)})", styles['Heading3']))
+        
+        species_stats = [
+            ['Attribute', 'Mean', 'Std Dev'],
+            ['Bill Length (mm)', f"{species_df['Bill Length (Mm)'].mean():.2f}", f"{species_df['Bill Length (Mm)'].std():.2f}"],
+            ['Bill Depth (mm)', f"{species_df['Bill Depth (Mm)'].mean():.2f}", f"{species_df['Bill Depth (Mm)'].std():.2f}"],
+            ['Flipper Length (mm)', f"{species_df['Flipper Length (Mm)'].mean():.2f}", f"{species_df['Flipper Length (Mm)'].std():.2f}"],
+            ['Body Mass (g)', f"{species_df['Body Mass (G)'].mean():.2f}", f"{species_df['Body Mass (G)'].std():.2f}"]
+        ]
+        
+        species_stats_table = Table(species_stats, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+        species_stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ]))
+        story.append(species_stats_table)
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Correlation Analysis
+    story.append(PageBreak())
+    story.append(Paragraph("Correlation Analysis", heading_style))
+    numeric_cols = ['Bill Length (Mm)', 'Bill Depth (Mm)', 'Flipper Length (Mm)', 'Body Mass (G)']
+    corr_matrix = filtered_df[numeric_cols].corr()
+    
+    # Create correlation table
+    corr_data = [[''] + [col.replace(' (Mm)', '').replace(' (G)', '') for col in numeric_cols]]
+    for idx, row_name in enumerate(numeric_cols):
+        row = [row_name.replace(' (Mm)', '').replace(' (G)', '')]
+        for col_name in numeric_cols:
+            row.append(f"{corr_matrix.loc[row_name, col_name]:.3f}")
+        corr_data.append(row)
+    
+    corr_table = Table(corr_data, colWidths=[1.8*inch] + [1.3*inch]*4)
+    corr_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f7a')),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#1a5f7a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('BACKGROUND', (1, 1), (-1, -1), colors.beige),
+    ]))
+    story.append(corr_table)
+    
+    # Key Insights
+    story.append(Spacer(1, 0.3*inch))
+    story.append(Paragraph("Key Research Insights", heading_style))
+    insights = [
+        "Geographic Segregation: The data reveals distinct species distribution patterns across islands.",
+        "Morphological Variation: Significant differences in bill dimensions and body mass across species.",
+        "Ecological Plasticity: Adelie penguins demonstrate the highest adaptability across multiple islands.",
+        "Correlation Patterns: Strong positive correlation between flipper length and body mass across all species."
+    ]
+    
+    for insight in insights:
+        story.append(Paragraph(f"• {insight}", styles['Normal']))
+        story.append(Spacer(1, 0.1*inch))
+    
+    # Footer
+    story.append(Spacer(1, 0.5*inch))
+    story.append(Paragraph("---", styles['Normal']))
+    story.append(Paragraph(
+        "Palmer Archipelago Research Dashboard | Data Visualization Project 2026",
+        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)
+    ))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+df = load_data()
+
 # Sidebar filters
 st.sidebar.markdown("### GLOBAL FILTERS")
 st.sidebar.markdown(f"**n={len(df)} specimens**")
@@ -150,7 +386,19 @@ if st.sidebar.button("RESET FILTERS", use_container_width=True):
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("📄 **DOCUMENTATION**")
+if st.sidebar.button("📖 View Documentation", use_container_width=True):
+    st.sidebar.info("Documentation: This dashboard provides comprehensive analysis of Palmer Penguins dataset.")
+
 st.sidebar.markdown("📊 **EXPORT DATA**")
+if st.sidebar.button("💾 Export Filtered Data", use_container_width=True):
+    csv_data = filtered_df.to_csv(index=False)
+    st.sidebar.download_button(
+        label="⬇️ Download CSV",
+        data=csv_data,
+        file_name=f"penguins_filtered_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
 # Filter data
 filtered_df = df[
@@ -430,15 +678,23 @@ with tab2:
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # Export button
-        st.markdown("""
-        <div style="background: #3d9b9b; padding: 1.5rem; border-radius: 8px; text-align: center;">
-            <div style="color: white; font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">EXPORT ANALYSIS</div>
-            <div style="background: white; padding: 0.75rem; border-radius: 6px; color: #3d9b9b; font-weight: 600; cursor: pointer;">
-                GENERATE PDF REPORT
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Export button - WORKING VERSION
+        if st.button("📄 GENERATE PDF REPORT", use_container_width=True, type="primary"):
+            with st.spinner("Generating PDF report..."):
+                try:
+                    pdf_buffer = generate_pdf_report(filtered_df, attribute)
+                    
+                    st.download_button(
+                        label="⬇️ Download PDF Report",
+                        data=pdf_buffer,
+                        file_name=f"penguins_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                    st.success("✅ PDF report generated successfully!")
+                except Exception as e:
+                    st.error(f"Error generating PDF: {str(e)}")
+                    st.info("Make sure you have installed: pip install reportlab kaleido")
 
 # TAB 3: CORRELATIONS
 with tab3:
@@ -640,7 +896,16 @@ with tab3:
         st.markdown("**Outliers Removed:** 2")
         
         st.markdown("<br>", unsafe_allow_html=True)
-        st.button("DOWNLOAD MATRIX CSV", use_container_width=True)
+        
+        # Download correlation matrix as CSV
+        csv_buffer = corr_matrix.to_csv()
+        st.download_button(
+            "📊 DOWNLOAD MATRIX CSV",
+            data=csv_buffer,
+            file_name=f"correlation_matrix_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
 
 # TAB 4: ML EXPLORER
 with tab4:
