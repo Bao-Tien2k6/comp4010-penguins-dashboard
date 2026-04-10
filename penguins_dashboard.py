@@ -79,10 +79,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
     try:
-        # Try to load from local file first
         df = pd.read_csv('data/processed/penguins_cleaned.csv')
-        
-        # Map column names to match the dashboard format
         column_mapping = {
             'species': 'Species',
             'island': 'Island',
@@ -92,23 +89,14 @@ def load_data():
             'body_mass_g': 'Body Mass (G)',
             'sex': 'Sex'
         }
-        
         df = df.rename(columns=column_mapping)
-        
-        # Capitalize first letter of categorical values
         df['Species'] = df['Species'].str.capitalize()
         df['Island'] = df['Island'].str.capitalize()
-        
-        # Handle 'Unknown' sex values
         df['Sex'] = df['Sex'].replace('Unknown', 'Unknown')
-        
-        # Select only needed columns
-        needed_cols = ['Species', 'Island', 'Bill Length (Mm)', 'Bill Depth (Mm)', 
+        needed_cols = ['Species', 'Island', 'Bill Length (Mm)', 'Bill Depth (Mm)',
                        'Flipper Length (Mm)', 'Body Mass (G)', 'Sex']
         df = df[needed_cols]
-        
         return df
-        
     except FileNotFoundError:
         st.error("⚠️ Cannot find 'data/processed/penguins_cleaned.csv'. Please ensure the file exists.")
         st.info("Expected file path: data/processed/penguins_cleaned.csv")
@@ -121,37 +109,20 @@ df = load_data()
 
 # PDF Generation Function
 def generate_pdf_report(filtered_df, selected_attribute):
-    """Generate a comprehensive PDF report of the analysis"""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
     styles = getSampleStyleSheet()
-    
-    # Custom styles
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1a5f7a'),
-        spaceAfter=30,
-        alignment=TA_CENTER
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#1a5f7a'),
-        spaceAfter=12,
-        spaceBefore=12
-    )
-    
-    # Title
+
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'],
+        fontSize=24, textColor=colors.HexColor('#1a5f7a'), spaceAfter=30, alignment=TA_CENTER)
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'],
+        fontSize=16, textColor=colors.HexColor('#1a5f7a'), spaceAfter=12, spaceBefore=12)
+
     story.append(Paragraph("Palmer Penguins Analysis Report", title_style))
     story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     story.append(Spacer(1, 0.3*inch))
-    
-    # Executive Summary
+
     story.append(Paragraph("Executive Summary", heading_style))
     summary_data = [
         ['Metric', 'Value'],
@@ -162,7 +133,6 @@ def generate_pdf_report(filtered_df, selected_attribute):
         ['Max Body Mass', f"{filtered_df['Body Mass (G)'].max():.0f} g"],
         ['Min Body Mass', f"{filtered_df['Body Mass (G)'].min():.0f} g"]
     ]
-    
     summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
     summary_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f7a')),
@@ -178,15 +148,13 @@ def generate_pdf_report(filtered_df, selected_attribute):
     ]))
     story.append(summary_table)
     story.append(Spacer(1, 0.3*inch))
-    
-    # Species Distribution
+
     story.append(Paragraph("Species Distribution", heading_style))
     species_counts = filtered_df['Species'].value_counts()
     species_data = [['Species', 'Count', 'Percentage']]
     for species, count in species_counts.items():
-        pct = (count / len(filtered_df) * 100)
+        pct = count / len(filtered_df) * 100
         species_data.append([species, str(count), f"{pct:.1f}%"])
-    
     species_table = Table(species_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
     species_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#b47eba')),
@@ -202,15 +170,13 @@ def generate_pdf_report(filtered_df, selected_attribute):
     ]))
     story.append(species_table)
     story.append(Spacer(1, 0.3*inch))
-    
-    # Island Distribution
+
     story.append(Paragraph("Island Distribution", heading_style))
     island_counts = filtered_df['Island'].value_counts()
     island_data = [['Island', 'Count', 'Percentage']]
     for island, count in island_counts.items():
-        pct = (count / len(filtered_df) * 100)
+        pct = count / len(filtered_df) * 100
         island_data.append([island, str(count), f"{pct:.1f}%"])
-    
     island_table = Table(island_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
     island_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#c8902e')),
@@ -226,8 +192,7 @@ def generate_pdf_report(filtered_df, selected_attribute):
     ]))
     story.append(island_table)
     story.append(Spacer(1, 0.3*inch))
-    
-    # Statistical Summary for Selected Attribute
+
     story.append(Paragraph(f"Statistical Analysis: {selected_attribute}", heading_style))
     stats_data = [
         ['Statistic', 'Value'],
@@ -239,7 +204,6 @@ def generate_pdf_report(filtered_df, selected_attribute):
         ['25th Percentile', f"{filtered_df[selected_attribute].quantile(0.25):.2f}"],
         ['75th Percentile', f"{filtered_df[selected_attribute].quantile(0.75):.2f}"]
     ]
-    
     stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
     stats_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3d9b9b')),
@@ -255,16 +219,12 @@ def generate_pdf_report(filtered_df, selected_attribute):
     ]))
     story.append(stats_table)
     story.append(Spacer(1, 0.3*inch))
-    
-    # Page Break before detailed data
     story.append(PageBreak())
-    
-    # Species-by-Species Breakdown
+
     story.append(Paragraph("Detailed Species Analysis", heading_style))
     for species in filtered_df['Species'].unique():
         species_df = filtered_df[filtered_df['Species'] == species]
         story.append(Paragraph(f"{species} Penguins (n={len(species_df)})", styles['Heading3']))
-        
         species_stats = [
             ['Attribute', 'Mean', 'Std Dev'],
             ['Bill Length (mm)', f"{species_df['Bill Length (Mm)'].mean():.2f}", f"{species_df['Bill Length (Mm)'].std():.2f}"],
@@ -272,7 +232,6 @@ def generate_pdf_report(filtered_df, selected_attribute):
             ['Flipper Length (mm)', f"{species_df['Flipper Length (Mm)'].mean():.2f}", f"{species_df['Flipper Length (Mm)'].std():.2f}"],
             ['Body Mass (g)', f"{species_df['Body Mass (G)'].mean():.2f}", f"{species_df['Body Mass (G)'].std():.2f}"]
         ]
-        
         species_stats_table = Table(species_stats, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
         species_stats_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -288,21 +247,17 @@ def generate_pdf_report(filtered_df, selected_attribute):
         ]))
         story.append(species_stats_table)
         story.append(Spacer(1, 0.2*inch))
-    
-    # Correlation Analysis
+
     story.append(PageBreak())
     story.append(Paragraph("Correlation Analysis", heading_style))
     numeric_cols = ['Bill Length (Mm)', 'Bill Depth (Mm)', 'Flipper Length (Mm)', 'Body Mass (G)']
     corr_matrix = filtered_df[numeric_cols].corr()
-    
-    # Create correlation table
     corr_data = [[''] + [col.replace(' (Mm)', '').replace(' (G)', '') for col in numeric_cols]]
-    for idx, row_name in enumerate(numeric_cols):
+    for row_name in numeric_cols:
         row = [row_name.replace(' (Mm)', '').replace(' (G)', '')]
         for col_name in numeric_cols:
             row.append(f"{corr_matrix.loc[row_name, col_name]:.3f}")
         corr_data.append(row)
-    
     corr_table = Table(corr_data, colWidths=[1.8*inch] + [1.3*inch]*4)
     corr_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f7a')),
@@ -317,8 +272,7 @@ def generate_pdf_report(filtered_df, selected_attribute):
         ('BACKGROUND', (1, 1), (-1, -1), colors.beige),
     ]))
     story.append(corr_table)
-    
-    # Key Insights
+
     story.append(Spacer(1, 0.3*inch))
     story.append(Paragraph("Key Research Insights", heading_style))
     insights = [
@@ -327,80 +281,48 @@ def generate_pdf_report(filtered_df, selected_attribute):
         "Ecological Plasticity: Adelie penguins demonstrate the highest adaptability across multiple islands.",
         "Correlation Patterns: Strong positive correlation between flipper length and body mass across all species."
     ]
-    
     for insight in insights:
         story.append(Paragraph(f"• {insight}", styles['Normal']))
         story.append(Spacer(1, 0.1*inch))
-    
-    # Footer
+
     story.append(Spacer(1, 0.5*inch))
     story.append(Paragraph("---", styles['Normal']))
     story.append(Paragraph(
         "Palmer Archipelago Research Dashboard | Data Visualization Project 2026",
         ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)
     ))
-    
-    # Build PDF
     doc.build(story)
     buffer.seek(0)
     return buffer
 
-df = load_data()
-
-# Sidebar filters
+# ─── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.markdown("### GLOBAL FILTERS")
 st.sidebar.markdown(f"**n={len(df)} specimens**")
 
 st.sidebar.markdown("#### 🐧 SPECIES SELECTION")
 species_options = sorted(df['Species'].unique())
 selected_species = st.sidebar.multiselect(
-    "Select Species",
-    options=species_options,
-    default=species_options,
-    key="species_filter",
-    label_visibility="collapsed"
+    "Select Species", options=species_options, default=species_options,
+    key="species_filter", label_visibility="collapsed"
 )
 
 st.sidebar.markdown("#### 🏝️ ISLAND LOCALITY")
 island_options = sorted(df['Island'].unique())
 selected_islands = st.sidebar.multiselect(
-    "Select Islands",
-    options=island_options,
-    default=island_options,
-    key="island_filter",
-    label_visibility="collapsed"
+    "Select Islands", options=island_options, default=island_options,
+    key="island_filter", label_visibility="collapsed"
 )
 
 st.sidebar.markdown("#### 👥 DEMOGRAPHICS")
 sex_options = sorted(df['Sex'].unique())
 selected_sex = st.sidebar.multiselect(
-    "Select Sex",
-    options=sex_options,
-    default=sex_options,
-    key="sex_filter",
-    label_visibility="collapsed"
+    "Select Sex", options=sex_options, default=sex_options,
+    key="sex_filter", label_visibility="collapsed"
 )
 
 if st.sidebar.button("RESET FILTERS", use_container_width=True):
     st.rerun()
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("📄 **DOCUMENTATION**")
-if st.sidebar.button("📖 View Documentation", use_container_width=True):
-    st.sidebar.info("Documentation: This dashboard provides comprehensive analysis of Palmer Penguins dataset.")
-
-st.sidebar.markdown("📊 **EXPORT DATA**")
-if st.sidebar.button("💾 Export Filtered Data", use_container_width=True):
-    csv_data = filtered_df.to_csv(index=False)
-    st.sidebar.download_button(
-        label="⬇️ Download CSV",
-        data=csv_data,
-        file_name=f"penguins_filtered_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
-
-# Filter data
 filtered_df = df[
     (df['Species'].isin(selected_species)) &
     (df['Island'].isin(selected_islands)) &
@@ -411,20 +333,29 @@ if len(filtered_df) == 0:
     st.warning("⚠️ No data matches the current filters. Please adjust your selection.")
     st.stop()
 
-# Color mapping
-color_map = {
-    'Adelie': '#c8902e',
-    'Chinstrap': '#b47eba',
-    'Gentoo': '#3d9b9b'
-}
+st.sidebar.markdown("---")
+st.sidebar.markdown("📄 **DOCUMENTATION**")
+if st.sidebar.button("📖 View Documentation", use_container_width=True):
+    st.sidebar.info("Documentation: This dashboard provides comprehensive analysis of Palmer Penguins dataset.")
 
-# Header
+st.sidebar.markdown("📊 **EXPORT DATA**")
+if st.sidebar.button("💾 Export Filtered Data", use_container_width=True):
+    csv_data = filtered_df.to_csv(index=False)
+    st.sidebar.download_button(
+        label="⬇️ Download CSV", data=csv_data,
+        file_name=f"penguins_filtered_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv", use_container_width=True, key="download_csv_btn"
+    )
+
+color_map = {'Adelie': '#c8902e', 'Chinstrap': '#b47eba', 'Gentoo': '#3d9b9b'}
+
 st.markdown('<div class="main-header">Palmer Archipelago Research</div>', unsafe_allow_html=True)
 
-# Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Distributions", "Correlations", "ML Explorer"])
 
-# TAB 1: OVERVIEW
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 1: OVERVIEW  ← doc 3
+# ═══════════════════════════════════════════════════════════════════════════════
 with tab1:
     st.markdown('<div class="main-header">Palmer Penguins Explorer</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Exploring morphology, geography, and ML clustering</div>', unsafe_allow_html=True)
@@ -478,10 +409,8 @@ with tab1:
         st.markdown("#### Species Distribution by Island")
         st.markdown("Population density across Archipelago localities")
         
-        # Grouped/Stacked toggle
-        chart_type = st.radio("", ["Grouped", "Stacked"], horizontal=True)
+        chart_type = st.radio("", ["Grouped", "Stacked"], horizontal=True, key="chart_type_overview")
         
-        # Create pivot data
         pivot_data = filtered_df.groupby(['Island', 'Species']).size().reset_index(name='Count')
         
         if chart_type == "Grouped":
@@ -492,6 +421,7 @@ with tab1:
                 color='Species',
                 color_discrete_map=color_map,
                 barmode='group',
+                text='Count',
                 height=400
             )
         else:
@@ -502,9 +432,11 @@ with tab1:
                 color='Species',
                 color_discrete_map=color_map,
                 barmode='stack',
+                text='Count',
                 height=400
             )
         
+        fig.update_traces(textposition='outside')
         fig.update_layout(
             plot_bgcolor='white',
             paper_bgcolor='white',
@@ -518,31 +450,84 @@ with tab1:
         st.markdown("#### Species Breakdown")
         st.markdown(f"Overall proportion of n={len(filtered_df)}")
         
-        # Calculate percentages
         species_counts = filtered_df['Species'].value_counts()
         species_pct = (species_counts / len(filtered_df) * 100).round(1)
         
-        # Create donut chart
+        # FIX 1: Smaller donut with visible labels outside
         fig = go.Figure(data=[go.Pie(
             labels=species_counts.index,
             values=species_counts.values,
-            hole=0.6,
+            hole=0.5,  # Reduced from 0.6 to 0.5
             marker=dict(colors=[color_map.get(s, '#999999') for s in species_counts.index]),
             textposition='outside',
-            textinfo='none'
+            textinfo='label+percent',
+            pull=[0.05, 0.05, 0.05]  # Pull slices slightly for better label visibility
         )])
         
         fig.update_layout(
             showlegend=False,
             height=400,
-            margin=dict(t=20, b=20, l=20, r=20),
-            annotations=[dict(text='100%<br>DATA FULL', x=0.5, y=0.5, font_size=16, showarrow=False)]
+            margin=dict(t=40, b=40, l=80, r=80),  # Increased margins for labels
+            annotations=[dict(text='100%<br>DATA FULL', x=0.5, y=0.5, font_size=14, showarrow=False)]
         )
         st.plotly_chart(fig, use_container_width=True)
         
-        # Species list
         for species in species_counts.index:
             st.markdown(f"**{species}** - {species_pct[species]}%")
+    
+    # Additional insights - REMOVED Bill Length vs Depth (FIX 3)
+    st.markdown("---")
+    st.markdown("### Additional Insights")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # FIX 2: Sex Distribution with legend instead of labels
+        st.markdown("#### Sex Distribution")
+        sex_counts = filtered_df['Sex'].value_counts()
+        fig = px.pie(
+            values=sex_counts.values,
+            names=sex_counts.index,
+            color_discrete_sequence=['#3d9b9b', '#b47eba', '#c8902e'],
+            height=300
+        )
+        fig.update_traces(
+            textposition='inside',
+            textinfo='percent',
+            showlegend=True  # Show legend instead of labels
+        )
+        fig.update_layout(
+            margin=dict(t=20, b=20, l=20, r=20),
+            legend=dict(
+                orientation="v",
+                yanchor="middle",
+                y=0.5,
+                xanchor="left",
+                x=1.05
+            )
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.markdown("#### Body Mass Range by Species")
+        fig = go.Figure()
+        for species in filtered_df['Species'].unique():
+            species_data = filtered_df[filtered_df['Species'] == species]
+            fig.add_trace(go.Box(
+                y=species_data['Body Mass (G)'],
+                name=species,
+                marker_color=color_map.get(species, '#999999'),
+                boxmean='sd'
+            ))
+        fig.update_layout(
+            height=300,
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            yaxis=dict(title='Body Mass (g)', showgrid=True, gridcolor='#f0f0f0'),
+            showlegend=False,
+            margin=dict(t=20, b=20, l=40, r=20)
+        )
+        st.plotly_chart(fig, use_container_width=True)
     
     # Critical Research Insight
     st.markdown("""
@@ -556,13 +541,25 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
     
-    # Bottom section
+    # FIX 4: Antarctica image only, no description
     col1, col2 = st.columns([1.5, 1])
-    
+    from pathlib import Path
     with col1:
         st.markdown("#### Palmer Archipelago Coastal Study Area")
-        st.info("🗺️ Geographic location: Antarctic Peninsula region")
-    
+        st.markdown("🗺️ **Geographic location:** Antarctic Peninsula region")
+        try:
+            st.image("images/antarctica.png", caption="Palmer Archipelago - Antarctic Peninsula", use_container_width=True)
+        except:
+            st.info("""
+            📍 **Palmer Archipelago, Antarctica**
+ 
+            The Palmer Station Long Term Ecological Research (LTER) study area comprises:
+            - **Anvers Island** and surrounding waters
+            - Located on the **Antarctic Peninsula**
+            - Three primary study islands: Biscoe, Dream, and Torgersen
+            - Critical habitat for Adélie, Chinstrap, and Gentoo penguins
+            """)
+
     with col2:
         st.markdown("#### Morphological Baseline")
         st.markdown("""
@@ -570,19 +567,23 @@ with tab1:
         calibrated against the 2007-2009 multi-year study. This 
         dashboard provides real-time filtering across the normalized 
         n={} specimen dataset.
+        
+        **Key Measurements:**
+        - Bill Length & Depth (mm)
+        - Flipper Length (mm)
+        - Body Mass (g)
+        - Sex Classification
         """.format(len(filtered_df)))
-
-# TAB 2: DISTRIBUTIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 2: DISTRIBUTIONS  ← doc 3
+# ═══════════════════════════════════════════════════════════════════════════════
 with tab2:
     st.markdown("### ANALYSIS ATTRIBUTE")
-    
     col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
-        attribute = st.selectbox(
-            "Attribute", 
+        attribute = st.selectbox("Attribute",
             ["Bill Length (Mm)", "Bill Depth (Mm)", "Flipper Length (Mm)", "Body Mass (G)"],
-            label_visibility="collapsed"
-        )
+            label_visibility="collapsed")
     with col2:
         bins = st.slider("HISTOGRAM BINS", 10, 50, 30)
     with col3:
@@ -590,67 +591,40 @@ with tab2:
         for species in selected_species:
             if species in color_map:
                 st.markdown(f'<span style="color: {color_map[species]};">● {species.upper()}</span>', unsafe_allow_html=True)
-    
-    # Attribute Distribution Histogram
+
     st.markdown("### Attribute Distribution")
     st.markdown(f"Comparative frequency of {attribute} across all recorded specimens")
-    
     fig = go.Figure()
     for species in selected_species:
         if species in color_map:
-            species_data = filtered_df[filtered_df['Species'] == species]
+            sdata = filtered_df[filtered_df['Species'] == species]
             fig.add_trace(go.Histogram(
-                x=species_data[attribute],
-                name=species,
-                marker_color=color_map[species],
-                opacity=0.7,
-                nbinsx=bins,
-                text=[species] * len(species_data),
+                x=sdata[attribute], name=species, marker_color=color_map[species],
+                opacity=0.7, nbinsx=bins, text=[species] * len(sdata),
                 hovertemplate=f'<b>{species}</b><br>{attribute}: %{{x}}<br>Count: %{{y}}<extra></extra>'
             ))
-    
-    fig.update_layout(
-        barmode='overlay',
-        height=400,
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        xaxis=dict(showgrid=False, title=attribute),
-        yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Frequency'),
-        showlegend=False
-    )
+    fig.update_layout(barmode='overlay', height=400, plot_bgcolor='white', paper_bgcolor='white',
+                      xaxis=dict(showgrid=False, title=attribute),
+                      yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Frequency'),
+                      showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
-    
-    # Mass vs Bill Area Variance
+
     st.markdown("### Mass vs Bill Area Variance")
     st.markdown("Interquartile range and outliers by species")
-    
     col1, col2 = st.columns([2, 1])
-    
     with col1:
-        # Box plots for each species
         fig = go.Figure()
-        
         for species in selected_species:
             if species in color_map:
-                species_data = filtered_df[filtered_df['Species'] == species]
-                fig.add_trace(go.Box(
-                    y=species_data['Body Mass (G)'],
-                    name=species,
-                    marker_color=color_map[species],
-                    boxmean='sd'
-                ))
-        
-        fig.update_layout(
-            height=400,
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Body Mass (g)'),
-            showlegend=False
-        )
+                sdata = filtered_df[filtered_df['Species'] == species]
+                fig.add_trace(go.Box(y=sdata['Body Mass (G)'], name=species,
+                                     marker_color=color_map[species], boxmean='sd'))
+        fig.update_layout(height=400, plot_bgcolor='white', paper_bgcolor='white',
+                          yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Body Mass (g)'),
+                          showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
-    
+
     with col2:
-        # Max body mass
         max_mass_row = filtered_df.loc[filtered_df['Body Mass (G)'].idxmax()]
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: #3d9b9b;">
@@ -658,12 +632,8 @@ with tab2:
             <div style="font-size: 2.5rem; font-weight: 700; color: #3d9b9b;">{int(max_mass_row['Body Mass (G)'])}</div>
             <div style="color: #666; font-size: 0.9rem;">grams</div>
             <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">{max_mass_row['Species']} ({max_mass_row['Sex']}, {max_mass_row['Island']})</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        </div>""", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Avg attribute
         if len(selected_species) > 0:
             first_species = selected_species[0]
             attr_mean = filtered_df[filtered_df['Species'] == first_species][attribute].mean()
@@ -673,129 +643,74 @@ with tab2:
                 <div style="font-size: 2.5rem; font-weight: 700; color: #b47eba;">{attr_mean:.1f}</div>
                 <div style="color: #666; font-size: 0.9rem;">{'mm' if 'Mm' in attribute else 'grams'}</div>
                 <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">{first_species} (Global Population)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            </div>""", unsafe_allow_html=True)
         st.markdown("<br><br>", unsafe_allow_html=True)
-        
-        # Export button - WORKING VERSION
         if st.button("📄 GENERATE PDF REPORT", use_container_width=True, type="primary"):
             with st.spinner("Generating PDF report..."):
                 try:
                     pdf_buffer = generate_pdf_report(filtered_df, attribute)
-                    
-                    st.download_button(
-                        label="⬇️ Download PDF Report",
-                        data=pdf_buffer,
-                        file_name=f"penguins_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
-                    )
+                    st.download_button(label="⬇️ Download PDF Report", data=pdf_buffer,
+                                       file_name=f"penguins_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                       mime="application/pdf", use_container_width=True)
                     st.success("✅ PDF report generated successfully!")
                 except Exception as e:
                     st.error(f"Error generating PDF: {str(e)}")
                     st.info("Make sure you have installed: pip install reportlab kaleido")
 
-# TAB 3: CORRELATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 3: CORRELATIONS  ← doc 4 (Strongest Link card, heatmap đơn, không Cramér's V)
+# ═══════════════════════════════════════════════════════════════════════════════
 with tab3:
     st.markdown("### The Simpson's Paradox")
     st.markdown("Interpreting correlation trends across biological subpopulations.")
-    
+
     col1, col2 = st.columns(2)
-    
     with col1:
         st.markdown("#### GLOBAL CORRELATION")
         st.markdown("**Aggregated View**")
-        
-        # Global correlation scatter
-        fig = px.scatter(
-            filtered_df,
-            x='Bill Length (Mm)',
-            y='Bill Depth (Mm)',
-            trendline="ols",
-            height=400
-        )
-        
-        # Calculate correlation
+        fig = px.scatter(filtered_df, x='Bill Length (Mm)', y='Bill Depth (Mm)',
+                         trendline="ols", height=400)
         corr = filtered_df[['Bill Length (Mm)', 'Bill Depth (Mm)']].corr().iloc[0, 1]
-        
         fig.update_traces(marker=dict(color='gray', size=5, opacity=0.3))
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            xaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Length (mm)'),
-            yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Depth (mm)'),
-            annotations=[
-                dict(
-                    text=f'r = {corr:.2f}',
-                    xref="paper", yref="paper",
-                    x=0.05, y=0.95,
-                    showarrow=False,
-                    font=dict(size=14, color='red')
-                )
-            ]
-        )
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+                          xaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Length (mm)'),
+                          yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Depth (mm)'),
+                          annotations=[dict(text=f'r = {corr:.2f}', xref="paper", yref="paper",
+                                            x=0.05, y=0.95, showarrow=False, font=dict(size=14, color='red'))])
         st.plotly_chart(fig, use_container_width=True)
-    
+
     with col2:
         st.markdown("#### BIOLOGICAL CONTEXT")
         st.markdown("**Disaggregated View**")
-        
         show_species_color = st.checkbox("SHOW SPECIES COLOR", value=True)
-        
-        # Species-colored correlation scatter
-        fig = px.scatter(
-            filtered_df,
-            x='Bill Length (Mm)',
-            y='Bill Depth (Mm)',
-            color='Species' if show_species_color else None,
-            color_discrete_map=color_map,
-            trendline="ols",
-            height=400
-        )
-        
-        # Calculate species-level correlations
+        fig = px.scatter(filtered_df, x='Bill Length (Mm)', y='Bill Depth (Mm)',
+                         color='Species' if show_species_color else None,
+                         color_discrete_map=color_map, trendline="ols", height=400)
         species_corrs = []
         for species in selected_species:
-            species_data = filtered_df[filtered_df['Species'] == species]
-            if len(species_data) > 2:
-                corr = species_data[['Bill Length (Mm)', 'Bill Depth (Mm)']].corr().iloc[0, 1]
-                species_corrs.append(corr)
-        
+            sdata = filtered_df[filtered_df['Species'] == species]
+            if len(sdata) > 2:
+                species_corrs.append(sdata[['Bill Length (Mm)', 'Bill Depth (Mm)']].corr().iloc[0, 1])
         avg_corr = np.mean(species_corrs) if species_corrs else 0
-        
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            xaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Length (mm)'),
-            yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Depth (mm)'),
-            annotations=[
-                dict(
-                    text=f'r̄ = +{avg_corr:.2f}',
-                    xref="paper", yref="paper",
-                    x=0.05, y=0.95,
-                    showarrow=False,
-                    font=dict(size=14, color='#3d9b9b')
-                )
-            ]
-        )
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+                          xaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Length (mm)'),
+                          yaxis=dict(showgrid=True, gridcolor='#f0f0f0', title='Bill Depth (mm)'),
+                          annotations=[dict(text=f'r̄ = +{avg_corr:.2f}', xref="paper", yref="paper",
+                                            x=0.05, y=0.95, showarrow=False, font=dict(size=14, color='#3d9b9b'))])
         st.plotly_chart(fig, use_container_width=True)
-    
-    # Research Insight
+
     st.markdown("""
     <div class="insight-box">
         <div class="insight-title">💡 RESEARCH INSIGHT</div>
         <div style="color: #333; line-height: 1.6;">
-        Simpson's Paradox occurs here: while bill length and depth appear negatively correlated in the global dataset, they are <b>strongly positively 
+        Simpson's Paradox occurs here: while bill length and depth appear negatively correlated in the global dataset, they are <b>strongly positively
         correlated</b> within each individual species. This highlights the risk of omitting species as a confounding variable in phenotypic analysis.
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Interactive Multi-Axis Explorer
+
     st.markdown("### Interactive Multi-Axis Explorer")
     st.markdown("Explore custom variable relationships across islands and demographics.")
-    
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         x_axis = st.selectbox("X AXIS", ["Flipper Length (Mm)", "Bill Length (Mm)", "Bill Depth (Mm)", "Body Mass (G)"], index=0)
@@ -805,74 +720,42 @@ with tab3:
         show_ols = st.checkbox("Show OLS Trend", value=True)
     with col4:
         facet_island = st.checkbox("Facet by Island", value=False)
-    
+
     col1, col2 = st.columns([2, 1])
-    
     with col1:
-        fig = px.scatter(
-            filtered_df,
-            x=x_axis,
-            y=y_axis,
-            color='Species',
-            color_discrete_map=color_map,
-            facet_col='Island' if facet_island else None,
-            trendline="ols" if show_ols else None,
-            height=500
-        )
-        
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            xaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
-            yaxis=dict(showgrid=True, gridcolor='#f0f0f0')
-        )
+        fig = px.scatter(filtered_df, x=x_axis, y=y_axis, color='Species',
+                         color_discrete_map=color_map,
+                         facet_col='Island' if facet_island else None,
+                         trendline="ols" if show_ols else None, height=500)
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white',
+                          xaxis=dict(showgrid=True, gridcolor='#f0f0f0'),
+                          yaxis=dict(showgrid=True, gridcolor='#f0f0f0'))
         st.plotly_chart(fig, use_container_width=True)
-    
     with col2:
         st.markdown("### MODEL STATISTICS")
-        
-        # Calculate Pearson's R
-        corr_matrix = filtered_df[[x_axis, y_axis]].corr()
-        pearson_r = corr_matrix.iloc[0, 1]
-        
+        pearson_r = filtered_df[[x_axis, y_axis]].corr().iloc[0, 1]
         st.metric("Pearson's R", f"{pearson_r:.3f}")
         st.metric("P-Value", "< 0.001")
         st.metric("R-Squared", f"{pearson_r**2:.3f}")
-        
         st.markdown("### KEY INFLUENCERS")
         st.markdown("☑ Body Mass (g)")
         st.markdown("☑ Island Location")
         st.markdown("○ Sample Year")
-    
-    # Correlation Matrix
+
+    # Correlation Matrix — doc 4 style
     st.markdown("### Correlation Matrix")
-    st.markdown("Spearman Rank heatmap across numeric phenotypes.")
-    
+    st.markdown("Pearson correlation heatmap across numeric phenotypes.")
     col1, col2 = st.columns([2, 1])
-    
     with col1:
-        # Compute correlation matrix
         numeric_cols = ['Bill Length (Mm)', 'Bill Depth (Mm)', 'Flipper Length (Mm)', 'Body Mass (G)']
-        corr_matrix = filtered_df[numeric_cols].corr(method='spearman')
-        
-        # Create heatmap
-        fig = px.imshow(
-            corr_matrix,
-            labels=dict(color="Correlation"),
-            x=corr_matrix.columns,
-            y=corr_matrix.columns,
-            color_continuous_scale='RdBu_r',
-            zmin=-1, zmax=1,
-            text_auto='.2f',
-            height=500
-        )
-        
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white'
-        )
+        corr_matrix = filtered_df[numeric_cols].corr()
+        fig = px.imshow(corr_matrix, labels=dict(color="Correlation"),
+                        x=corr_matrix.columns, y=corr_matrix.columns,
+                        color_continuous_scale='RdBu_r', zmin=-1, zmax=1,
+                        text_auto='.2f', height=500)
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white')
         st.plotly_chart(fig, use_container_width=True)
-    
+
     with col2:
         st.markdown("""
         <div style="background: #1a5f7a; padding: 1.5rem; border-radius: 8px; color: white;">
@@ -887,109 +770,84 @@ with tab3:
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
         st.markdown("<br>", unsafe_allow_html=True)
-        
         st.markdown("### CORRELATION DETAILS")
         st.markdown(f"**Sample Size (n):** {len(filtered_df)}")
-        st.markdown("**Method:** Spearman")
+        st.markdown("**Method:** Pearson")
         st.markdown("**Outliers Removed:** 2")
-        
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Download correlation matrix as CSV
         csv_buffer = corr_matrix.to_csv()
-        st.download_button(
-            "📊 DOWNLOAD MATRIX CSV",
-            data=csv_buffer,
-            file_name=f"correlation_matrix_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+        st.download_button("📊 DOWNLOAD MATRIX CSV", data=csv_buffer,
+                           file_name=f"correlation_matrix_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                           mime="text/csv", use_container_width=True)
 
+# ═══════════════════════════════════════════════════════════════════════════════
 # TAB 4: ML EXPLORER
+# Cluster Labels + Ground Truth ← doc 4 (không symbol mismatch)
+# Compare View ← doc 3 (cross X cho mismatch)
+# ═══════════════════════════════════════════════════════════════════════════════
 with tab4:
     st.markdown("### 🤖 Unsupervised Learning Explorer")
     st.markdown("""
-    This module analyzes the morphometric relationships of the Palmer Archipelago penguins using 
-    **Principal Component Analysis (PCA)** for dimensionality reduction and **K-Means Clustering** 
-    for specimen categorization. We evaluate the alignment between biological species (Ground Truth) 
+    This module analyzes the morphometric relationships of the Palmer Archipelago penguins using
+    **Principal Component Analysis (PCA)** for dimensionality reduction and **K-Means Clustering**
+    for specimen categorization. We evaluate the alignment between biological species (Ground Truth)
     and mathematical clusters based on bill depth, length, flipper length, and body mass.
     """)
-    
-    # Prepare ML data
+
     feature_cols = ['Bill Length (Mm)', 'Bill Depth (Mm)', 'Flipper Length (Mm)', 'Body Mass (G)']
     X = filtered_df[feature_cols].values
-    
-    # Check if we have enough data for clustering
+
     if len(filtered_df) < 3:
         st.warning("⚠️ Need at least 3 specimens for ML clustering analysis. Please adjust filters.")
         st.stop()
-    
-    # Standardize
+
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
-    # PCA
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
-    
-    # K-Means - ensure we have enough unique species
+
     unique_species = filtered_df['Species'].nunique()
-    n_clusters = min(3, unique_species, len(filtered_df) // 2)  # At least 2 points per cluster
-    
+    n_clusters = min(3, unique_species, len(filtered_df) // 2)
+
     if n_clusters < 2:
         st.warning("⚠️ Need at least 2 different species for clustering analysis. Please adjust filters.")
         st.stop()
-    
+
     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     cluster_labels = kmeans.fit_predict(X_scaled)
-    
-    # Calculate metrics - only if we have enough clusters and diversity
+
     try:
-        # Check if we actually got multiple clusters
         unique_clusters = len(np.unique(cluster_labels))
-        if unique_clusters < 2:
-            st.warning("⚠️ Clustering resulted in a single cluster. Need more diverse data.")
-            silhouette = 0.0
-        else:
-            silhouette = silhouette_score(X_scaled, cluster_labels)
-    except Exception as e:
-        st.warning(f"⚠️ Could not calculate silhouette score: {str(e)}")
+        silhouette = silhouette_score(X_scaled, cluster_labels) if unique_clusters >= 2 else 0.0
+    except Exception:
         silhouette = 0.0
-    
-    # Create a dataframe for plotting
+
     ml_df = filtered_df.copy()
     ml_df['PC1'] = X_pca[:, 0]
     ml_df['PC2'] = X_pca[:, 1]
     ml_df['Cluster'] = cluster_labels
-    
-    # Calculate ARI if we have species labels
+
     try:
         species_map = {species: i for i, species in enumerate(ml_df['Species'].unique())}
         true_labels = ml_df['Species'].map(species_map).values
-        
-        # Only calculate if we have multiple unique labels in both
-        if len(np.unique(true_labels)) > 1 and len(np.unique(cluster_labels)) > 1:
-            ari = adjusted_rand_score(true_labels, cluster_labels)
-        else:
-            ari = 0.0
-    except Exception as e:
+        ari = adjusted_rand_score(true_labels, cluster_labels) \
+            if len(np.unique(true_labels)) > 1 and len(np.unique(cluster_labels)) > 1 else 0.0
+    except Exception:
         ari = 0.0
-    
-    # Count mismatches
+        species_map = {}
+
+    # is_mismatch — used only in Compare View
     try:
-        ml_df['Mismatch'] = ml_df.apply(
-            lambda row: 1 if row['Cluster'] != species_map.get(row['Species'], -1) else 0, 
-            axis=1
-        )
-        mismatches = ml_df['Mismatch'].sum()
-    except Exception as e:
+        ml_df['is_mismatch'] = ml_df.apply(
+            lambda row: row['Cluster'] != species_map.get(row['Species'], -1), axis=1)
+        mismatches = ml_df['is_mismatch'].sum()
+    except Exception:
+        ml_df['is_mismatch'] = False
         mismatches = 0
-    
-    # Metrics row
+
+    # Metrics
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: #1a5f7a;">
@@ -997,9 +855,7 @@ with tab4:
             <div style="font-size: 2.5rem; font-weight: 700; color: #1a5f7a;">{silhouette:.2f}</div>
             <div style="color: #666; font-size: 0.8rem;">/1.0</div>
             <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">Measures how similar an object is to its own cluster compared to others.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        </div>""", unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: #3d9b9b;">
@@ -1007,9 +863,7 @@ with tab4:
             <div style="font-size: 2.5rem; font-weight: 700; color: #3d9b9b;">{ari:.2f}</div>
             <div style="color: #666; font-size: 0.8rem;">📈</div>
             <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">High similarity between clustering results and ground truth labels.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        </div>""", unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: #dc2626;">
@@ -1017,107 +871,100 @@ with tab4:
             <div style="font-size: 2.5rem; font-weight: 700; color: #dc2626;">{mismatches}</div>
             <div style="color: #666; font-size: 0.8rem;">/ {len(filtered_df)} Specimens</div>
             <div style="color: #999; font-size: 0.8rem; margin-top: 0.5rem;">Occurrences where K-Means label differs from biological species classification.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        </div>""", unsafe_allow_html=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Dimensionality Comparison
     st.markdown("### Dimensionality Comparison")
     st.markdown("Visualization of PCA 1 vs PCA 2 components")
-    
+
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         view_mode = st.radio("", ["Cluster Labels", "Ground Truth", "Compare View"], horizontal=False)
-    
+
+    cluster_colors = {0: '#3d9b9b', 1: '#b47eba', 2: '#c8902e'}
+
     if view_mode == "Compare View":
+        # ── doc 3: side-by-side với cross X cho mismatch ──────────────────────
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.markdown("**MODEL: K-MEANS CLUSTERS (K={})** ".format(n_clusters))
-            cluster_colors = {0: '#3d9b9b', 1: '#b47eba', 2: '#c8902e'}
-            
+            cluster_to_species = {}
+            for cluster_id in range(n_clusters):
+                cdata = ml_df[ml_df['Cluster'] == cluster_id]
+                cluster_to_species[cluster_id] = cdata['Species'].mode()[0] if len(cdata) > 0 else f"Cluster {cluster_id}"
+            ml_df['cluster_label'] = ml_df['Cluster'].map(cluster_to_species)
+
             fig = px.scatter(
-                ml_df,
-                x='PC1',
-                y='PC2',
-                color=ml_df['Cluster'].astype(str),
-                color_discrete_map={str(k): v for k, v in cluster_colors.items() if k < n_clusters},
-                labels={'color': 'Cluster'},
+                ml_df, x='PC1', y='PC2',
+                color='cluster_label',
+                symbol='is_mismatch',
+                symbol_map={False: "circle", True: "x"},
+                color_discrete_map=color_map,
+                labels={'cluster_label': 'Cluster'},
                 height=500
             )
-            
+            fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
             fig.update_layout(
-                plot_bgcolor='#e8f4f5',
-                paper_bgcolor='white',
-                xaxis=dict(showgrid=True, gridcolor='white'),
-                yaxis=dict(showgrid=True, gridcolor='white'),
-                legend_title_text='Cluster'
+                plot_bgcolor='#e8f4f5', paper_bgcolor='white',
+                xaxis=dict(showgrid=True, gridcolor='white', title='Principal Component 1'),
+                yaxis=dict(showgrid=True, gridcolor='white', title='Principal Component 2'),
+                legend_title_text='Cluster (X = Mismatch)'
             )
             st.plotly_chart(fig, use_container_width=True)
-        
+
         with col2:
             st.markdown("**GROUND TRUTH: SPECIES LABELS**")
-            
             fig = px.scatter(
-                ml_df,
-                x='PC1',
-                y='PC2',
+                ml_df, x='PC1', y='PC2',
                 color='Species',
+                symbol='is_mismatch',
+                symbol_map={False: "circle", True: "x"},
                 color_discrete_map=color_map,
                 height=500
             )
-            
+            fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
             fig.update_layout(
-                plot_bgcolor='#e8f4f5',
-                paper_bgcolor='white',
-                xaxis=dict(showgrid=True, gridcolor='white'),
-                yaxis=dict(showgrid=True, gridcolor='white')
+                plot_bgcolor='#e8f4f5', paper_bgcolor='white',
+                xaxis=dict(showgrid=True, gridcolor='white', title='Principal Component 1'),
+                yaxis=dict(showgrid=True, gridcolor='white', title='Principal Component 2'),
+                legend_title_text='Species (X = Mismatch)'
             )
             st.plotly_chart(fig, use_container_width=True)
-    
+
     else:
+        # ── doc 4: single chart, không có symbol mismatch ─────────────────────
         if view_mode == "Cluster Labels":
-            cluster_colors = {0: '#3d9b9b', 1: '#b47eba', 2: '#c8902e'}
-            
             fig = px.scatter(
-                ml_df,
-                x='PC1',
-                y='PC2',
+                ml_df, x='PC1', y='PC2',
                 color=ml_df['Cluster'].astype(str),
                 color_discrete_map={str(k): v for k, v in cluster_colors.items() if k < n_clusters},
                 labels={'color': 'Cluster'},
                 height=500
             )
-        else:
+        else:  # Ground Truth
             fig = px.scatter(
-                ml_df,
-                x='PC1',
-                y='PC2',
+                ml_df, x='PC1', y='PC2',
                 color='Species',
                 color_discrete_map=color_map,
                 height=500
             )
-        
         fig.update_layout(
-            plot_bgcolor='#e8f4f5',
-            paper_bgcolor='white',
+            plot_bgcolor='#e8f4f5', paper_bgcolor='white',
             xaxis=dict(showgrid=True, gridcolor='white'),
             yaxis=dict(showgrid=True, gridcolor='white')
         )
         st.plotly_chart(fig, use_container_width=True)
-    
-    # Biological Mismatch Insight
+
     st.markdown("""
     <div class="insight-box">
         <div class="insight-title">💡 BIOLOGICAL MISMATCH INSIGHT</div>
         <div style="color: #333; line-height: 1.6;">
-        The {} mismatches primarily occur between Adelie and Chinstrap penguins on Dream Island. These specimens exhibit overlapping 
-        flipper-to-bill ratios, suggesting convergent morphological traits in shared habitats that challenge unsupervised clustering 
-        algorithms.
+        The {} mismatches (marked with <b>X</b>) primarily occur between Adelie and Chinstrap penguins on Dream Island. These specimens exhibit overlapping
+        flipper-to-bill ratios, suggesting convergent morphological traits in shared habitats that challenge unsupervised clustering algorithms.
         </div>
     </div>
     """.format(mismatches), unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("Palmer Archipelago Research Dashboard | Data Visualization Final Project 2026")
+st.markdown("Palmer Archipelago Research Dashboard | Data Visualization Project 2026")
