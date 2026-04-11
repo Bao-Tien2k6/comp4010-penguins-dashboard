@@ -778,20 +778,29 @@ with tab4:
     ml_df['PC2'] = X_pca[:, 1]
     ml_df['Cluster'] = cluster_labels
 
-    try:
-        species_map = {species: i for i, species in enumerate(ml_df['Species'].unique())}
-        true_labels = ml_df['Species'].map(species_map).values
-        ari = adjusted_rand_score(true_labels, cluster_labels) if len(np.unique(true_labels)) > 1 and len(np.unique(cluster_labels)) > 1 else 0.0
-    except Exception:
-        ari = 0.0
-        species_map = {}
+    cluster_map = {
+        0: "Adelie",
+        1: "Gentoo",
+        2: "Chinstrap"
+    }
+
+    species_to_label = {
+        "Adelie": 0,
+        "Gentoo": 1,
+        "Chinstrap": 2
+    }
+
+    ml_df['cluster_label'] = ml_df['Cluster'].map(cluster_map).fillna("Unknown Cluster")
+    ml_df['is_mismatch'] = ml_df['Species'] != ml_df['cluster_label']
+    mismatches = int(ml_df['is_mismatch'].sum())
 
     try:
-        ml_df['is_mismatch'] = ml_df.apply(lambda row: row['Cluster'] != species_map.get(row['Species'], -1), axis=1)
-        mismatches = ml_df['is_mismatch'].sum()
+        true_labels = ml_df['Species'].map(species_to_label).values
+        ari = adjusted_rand_score(true_labels, cluster_labels) \
+            if len(np.unique(true_labels)) > 1 and len(np.unique(cluster_labels)) > 1 else 0.0
     except Exception:
-        ml_df['is_mismatch'] = False
-        mismatches = 0
+        ari = 0.0
+
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -813,11 +822,11 @@ with tab4:
 
     if view_mode == "Compare View":
         # FIX 3: single merged chart - species colors, X marks mismatches, + checklist below
-        cluster_to_species = {}
-        for cluster_id in range(n_clusters):
-            cdata = ml_df[ml_df['Cluster'] == cluster_id]
-            cluster_to_species[cluster_id] = cdata['Species'].mode()[0] if len(cdata) > 0 else f"Cluster {cluster_id}"
-        ml_df['cluster_label'] = ml_df['Cluster'].map(cluster_to_species)
+        # cluster_to_species = {}
+        # for cluster_id in range(n_clusters):
+        #     cdata = ml_df[ml_df['Cluster'] == cluster_id]
+        #     cluster_to_species[cluster_id] = cdata['Species'].mode()[0] if len(cdata) > 0 else f"Cluster {cluster_id}"
+        # ml_df['cluster_label'] = ml_df['Cluster'].map(cluster_to_species)
 
         fig = go.Figure()
         for species in ml_df['Species'].unique():
