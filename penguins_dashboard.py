@@ -828,7 +828,7 @@ with tab4:
                 fig.add_trace(go.Scatter(
                     x=mismatched['PC1'], y=mismatched['PC2'], mode='markers',
                     name=f"{species} (mismatch X)",
-                    marker=dict(symbol='x', color=sp_color, size=13, line=dict(width=2.5, color=sp_color)),
+                    marker=dict(symbol='x', color=sp_color, size=8, line=dict(width=1.5, color=sp_color)),
                     customdata=mismatched['cluster_label'],
                     hovertemplate=f"<b>{species}</b> - K-Means mismatch<br>Assigned to: %{{customdata}}<br>PC1: %{{x:.2f}}<br>PC2: %{{y:.2f}}<extra></extra>"
                 ))
