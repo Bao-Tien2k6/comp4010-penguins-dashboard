@@ -319,35 +319,42 @@ with tab1:
         for species in species_counts.index:
             st.markdown(f"**{species}** - {species_pct[species]}%")
     st.markdown("---")
-    st.markdown("### Additional Insights")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### Sex Distribution")
-        sex_counts = filtered_df['Sex'].value_counts()
-        fig = px.pie(values=sex_counts.values, names=sex_counts.index,
-            color_discrete_sequence=['#3d9b9b', '#b47eba', '#c8902e'], height=300)
-        fig.update_traces(textposition='inside', textinfo='percent', showlegend=True)
-        fig.update_layout(margin=dict(t=20, b=20, l=20, r=20),
-            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.05))
-        st.plotly_chart(fig, use_container_width=True)
-    with col2:
-        st.markdown("#### Body Mass Range by Species")
-        fig = go.Figure()
-        for species in filtered_df['Species'].unique():
-            species_data = filtered_df[filtered_df['Species'] == species]
-            fig.add_trace(go.Box(y=species_data['Body Mass (G)'], name=species,
-                marker_color=color_map.get(species, '#999'), boxmean='sd'))
-        fig.update_layout(height=300, plot_bgcolor='white', paper_bgcolor='white',
-            yaxis=dict(title='Body Mass (g)', showgrid=True, gridcolor='#f0f0f0'),
-            showlegend=False, margin=dict(t=20, b=20, l=40, r=20))
-        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("#### Sex Distribution")
+    sex_counts = filtered_df['Sex'].value_counts()
+
+    fig = px.pie(
+        values=sex_counts.values,
+        names=sex_counts.index,
+        color_discrete_sequence=['#3d9b9b', '#b47eba', '#c8902e'],
+        height=300
+    )
+
+    fig.update_traces(
+        textposition='inside',
+        textinfo='percent',
+        showlegend=True
+    )
+
+    fig.update_layout(
+        margin=dict(t=20, b=20, l=20, r=20),
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.05
+        )
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
     st.markdown("""
     <div class="insight-box">
         <div class="insight-title">💡 CRITICAL RESEARCH INSIGHT</div>
         <div style="color: #333; line-height: 1.6;">
-        The data reveals a distinct geographic segregation: Gentoo penguins are found exclusively on Biscoe Island within this dataset,
-        while Chinstrap populations are confined to Dream Island. Adelie penguins exhibit the highest ecological plasticity, spanning all three
-        islands (Biscoe, Dream, and Torgersen).
+            The data reveals a distinct geographic segregation: Gentoo penguins are found exclusively on Biscoe Island within this dataset,
+            while Chinstrap populations are confined to Dream Island. Adelie penguins exhibit the highest ecological plasticity, spanning all three
+            islands (Biscoe, Dream, and Torgersen). Sex distribution shows 4.2% unknown genders, with an approximately even proportion between
+            male and female specimens among those with known sex.
         </div>
     </div>
     """, unsafe_allow_html=True)
