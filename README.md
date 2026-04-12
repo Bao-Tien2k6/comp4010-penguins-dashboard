@@ -34,11 +34,11 @@ comp4010-penguins-dashboard/
 │       ├── penguins_cleaned.csv       # Cleaned dataset used by the dashboard
 │       └── penguins_raw_cleaned.csv
 └── ML_implementation/
-    ├── ML.ipynb                       # Machine learning training notebook
-    ├── scaler.pkl                     # Saved StandardScaler
-    ├── pca.pkl                        # Saved PCA model
-    ├── kmeans_model.pkl               # Saved KMeans model
-    └── clustering_results.csv         # Exported clustering results
+│   ├── ML.ipynb                       # Machine learning training notebook
+│   ├── scaler.pkl                     # Saved StandardScaler
+│   ├── pca.pkl                        # Saved PCA model
+│   ├── kmeans_model.pkl               # Saved KMeans model
+│   └── clustering_results.csv         # Exported clustering results
 └── notebook/
     ├── plotly_viz.ipynb                   # Plotly visualization notebook
     ├── preprocessing.ipynb                # Data preprocessing notebook
