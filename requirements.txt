@@ -2,7 +2,7 @@ streamlit==1.42.0
 pandas==2.2.3
 numpy==1.26.4
 reportlab==4.0.7
-kaleido==0.2.1
+# kaleido==0.2.1
 palmerpenguins==0.1.6
 plotly==5.20.0
 scikit-learn==1.4.0
