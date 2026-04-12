@@ -24,8 +24,6 @@ The dashboard is designed to help users:
 ```text
 comp4010-penguins-dashboard/
 ├── penguins_dashboard.py              # Main Streamlit application
-├── plotly_viz.ipynb                   # Plotly visualization notebook
-├── preprocessing.ipynb                # Data preprocessing notebook
 ├── requirements.txt                   # Python dependencies
 ├── README.md
 ├── data/
@@ -36,11 +34,14 @@ comp4010-penguins-dashboard/
 │       ├── penguins_cleaned.csv       # Cleaned dataset used by the dashboard
 │       └── penguins_raw_cleaned.csv
 └── ML_implementation/
-    ├── ML.ipynb                       # Machine learning training notebook
-    ├── scaler.pkl                     # Saved StandardScaler
-    ├── pca.pkl                        # Saved PCA model
-    ├── kmeans_model.pkl               # Saved KMeans model
-    └── clustering_results.csv         # Exported clustering results
+│   ├── ML.ipynb                       # Machine learning training notebook
+│   ├── scaler.pkl                     # Saved StandardScaler
+│   ├── pca.pkl                        # Saved PCA model
+│   ├── kmeans_model.pkl               # Saved KMeans model
+│   └── clustering_results.csv         # Exported clustering results
+└── notebook/
+    ├── plotly_viz.ipynb                   # Plotly visualization notebook
+    ├── preprocessing.ipynb                # Data preprocessing notebook
 
 ```
 ## 3. Reproducing The Full Pipeline
@@ -61,7 +62,7 @@ python .\data\load_penguins_data.py
 
 3. Run the preprocessing notebook:
 
-- `preprocessing.ipynb`
+- `notebook/preprocessing.ipynb`
 
 4. Run the machine learning notebook:
 
