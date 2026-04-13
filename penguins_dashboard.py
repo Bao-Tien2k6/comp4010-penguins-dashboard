@@ -38,8 +38,27 @@ st.markdown("""
     .insight-box-purple { background: #f5eef8; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #b47eba; margin: 1rem 0; }
     .insight-title-purple { color: #b47eba; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
     .verdict-box { background: linear-gradient(135deg, #1a5f7a 0%, #3d9b9b 100%); padding: 1.5rem; border-radius: 10px; color: white; margin: 1rem 0; }
+    .stSidebar [data-baseweb="tag"] {
+        background: #484848 !important;
+        color: #ffffff !important;
+        border-color: rgba(255,255,255,0.15) !important;
+    }
+    .stSidebar [data-baseweb="tag"] * {
+        color: #ffffff !important;
+    }
+    .st-bo, .st-bo * {
+        background: #484848 !important;
+    }
     .stTabs [data-baseweb="tab-list"] { gap: 2rem; }
-    .stTabs [data-baseweb="tab"] { font-size: 1.1rem; font-weight: 500; }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #484848 !important;
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        font-weight: 00 !important;
+        color: #484848 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -332,6 +351,7 @@ with tab1:
     fig.update_traces(
         textposition='inside',
         textinfo='percent',
+        textfont=dict(color='white'),
         showlegend=True
     )
 
